@@ -1,55 +1,57 @@
 name: CI
 
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the main branch
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  repository_dispatch:
-    types: [ kernel-update ]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  build:
-    runs-on: ubuntu-22.04
+  build_kernel:
+    name: Build Kernel and Boot Image
+    runs-on: ubuntu-20.04
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
-      # Run initial build, and compile kernel and recovery
-      - name: Build
+      - name: Install Dependencies
         run: |
           sudo apt update
-          sudo apt install android-tools-mkbootimg bc build-essential ca-certificates cpio curl git kmod libssl-dev libtinfo5 python2 sudo unzip wget xz-utils -y --no-install-recommends
-          sudo ln -sf python2.7 /usr/bin/python
-          ./build.sh
-      - name: Upload basic tarball with boot and recovery images
+          sudo apt install -y android-tools-mkbootimg bc build-essential ca-certificates cpio curl git kmod libssl-dev libtinfo5 python2 sudo unzip wget xz-utils
+          sudo ln -sf /usr/bin/python2 /usr/bin/python
+
+      - name: Run Build Script
+        run: |
+          ./build.sh -b ./build_tmp -o out
+
+      - name: Upload Boot/Recovery Images
         uses: actions/upload-artifact@v4
         with:
-          path: out/*
-  flashable:
-    runs-on: ubuntu-22.04
-    needs: build
+          name: boot-images
+          path: |
+            out/boot.img
+            out/recovery.img
+
+  build_system:
+    name: Prepare System Image (from OTA)
+    runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       
-      - name: Make OTA images
+      - name: Install Dependencies
         run: |
           sudo apt update
           sudo apt install -y img2simg jq sudo wget xz-utils
+
+      - name: Fetch and Prepare OTA
+        run: |
           DEVICE="$(source deviceinfo && echo $deviceinfo_codename)"
           ./build/fetch-and-prepare-latest-ota.sh "16.04/arm64/android9/devel" "$DEVICE" ota
           mkdir -p out/
           ./build/system-image-from-ota.sh ota/ubuntu_command out
-      - uses: actions/upload-artifact@v4
+
+      - name: Upload System Image
+        uses: actions/upload-artifact@v4
         with:
-          name: OTA images
-          path: |
-            out/boot.img
-            out/system.img
-            out/recovery.img
+          name: system-image
+          path: out/system.img
