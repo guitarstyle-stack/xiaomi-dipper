@@ -10,7 +10,7 @@ on:
 jobs:
   build_kernel:
     name: Build Kernel and Boot Image
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
 
@@ -34,7 +34,7 @@ jobs:
 
   build_system:
     name: Prepare System Image (from OTA)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v3
       
