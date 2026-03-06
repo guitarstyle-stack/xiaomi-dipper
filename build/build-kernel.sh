@@ -22,9 +22,9 @@ esac
 export ARCH
 export CROSS_COMPILE=$TMPDOWN/aarch64-linux-android-4.9/bin/aarch64-linux-android-
 export CROSS_COMPILE_ARM32=$TMPDOWN/arm-linux-androideabi-4.9/bin/arm-linux-androideabi-
-MAKEOPTS=""
+MAKEOPTS="CROSS_COMPILE=$CROSS_COMPILE CROSS_COMPILE_ARM32=$CROSS_COMPILE_ARM32"
 if [ -n "$CC" ]; then
-    MAKEOPTS="CC=$CC"
+    MAKEOPTS="$MAKEOPTS CC=$CC"
 fi
 
 cd "$KERNEL_DIR"
